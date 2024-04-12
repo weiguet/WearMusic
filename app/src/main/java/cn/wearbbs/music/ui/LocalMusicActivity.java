@@ -2,14 +2,15 @@ package cn.wearbbs.music.ui;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,16 +33,23 @@ import cn.wearbbs.music.view.MessageView;
  */
 public class LocalMusicActivity extends AppCompatActivity {
 
+    private RecyclerView rv_main;
+    private LocalMusicAdapter localMusicAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_localmusic);
+        rv_main = findViewById(R.id.rv_main);
+        localMusicAdapter = new LocalMusicAdapter(new JSONArray(), this);
+        rv_main.setLayoutManager(new LinearLayoutManager(this));
+        rv_main.setAdapter(localMusicAdapter);
         checkPermissionForInit();
     }
 
     @SuppressLint("NonConstantResourceId")
-    public void onClick(View view){
-        switch (view.getId()){
+    public void onClick(View view) {
+        switch (view.getId()) {
             case R.id.main_title:
                 finish();
                 break;
@@ -51,10 +59,8 @@ public class LocalMusicActivity extends AppCompatActivity {
         }
     }
 
-    public void initList(){
-        File root = new File(getExternalFilesDir(null) + "/download");
-        if(root.exists()){
-            RecyclerView rv_main = findViewById(R.id.rv_main);
+    public void initList(File root) {
+        if (root.exists()) {
             JSONArray data = new JSONArray();
             findViewById(R.id.lv_loading).setVisibility(View.GONE);
 
@@ -64,92 +70,112 @@ public class LocalMusicActivity extends AppCompatActivity {
             File idDir = new File(root.getPath() + "/id");
 
             File[] musicFiles = musicDir.listFiles(pathname -> (
-                    pathname.getName().endsWith(".mp3")||
-                    pathname.getName().endsWith(".wav")||
-                    pathname.getName().endsWith(".aac")||
-                    pathname.getName().endsWith(".flac")));
+                    pathname.getName().endsWith(".mp3") ||
+                            pathname.getName().endsWith(".wav") ||
+                            pathname.getName().endsWith(".aac") ||
+                            pathname.getName().endsWith(".flac")));
             File[] lrcFiles = lrcDir.listFiles(pathname -> (pathname.getName().endsWith(".lrc")));
             File[] coverFiles = coverDir.listFiles(pathname -> (
-                    pathname.getName().endsWith(".jpg")||
+                    pathname.getName().endsWith(".jpg") ||
                             pathname.getName().endsWith(".png")));
             File[] idFiles = idDir.listFiles(pathname -> (pathname.getName().endsWith(".txt")));
 
-            if(musicFiles==null){
+            if (musicFiles == null) {
                 showErrorMessage();
                 return;
             }
-            if(musicFiles.length==0){
+            if (musicFiles.length == 0) {
                 showNoMusicMessage();
                 return;
             }
 
-            for(int i = 0; i < Objects.requireNonNull(musicFiles).length; i++){
+            for (int i = 0; i < Objects.requireNonNull(musicFiles).length; i++) {
                 JSONObject musicInfo = new JSONObject();
-                musicInfo.put("musicFile",musicFiles[i].getPath());
+                musicInfo.put("musicFile", musicFiles[i].getPath());
 
-                int lrcIndex = searchFilesArrayForIndex(lrcFiles,getFileName(musicFiles[i]));
-                if(lrcIndex!=-1){
+                int lrcIndex = searchFilesArrayForIndex(lrcFiles, getFileName(musicFiles[i]));
+                if (lrcIndex != -1) {
                     assert lrcFiles != null;
-                    musicInfo.put("lrcFile",lrcFiles[lrcIndex].getPath());
-                }
-                else{
-                    musicInfo.put("lrcFile",null);
+                    musicInfo.put("lrcFile", lrcFiles[lrcIndex].getPath());
+                } else {
+                    musicInfo.put("lrcFile", null);
                 }
 
-                int coverIndex = searchFilesArrayForIndex(coverFiles,getFileName(musicFiles[i]));
-                if(coverIndex!=-1){
+                int coverIndex = searchFilesArrayForIndex(coverFiles, getFileName(musicFiles[i]));
+                if (coverIndex != -1) {
                     assert coverFiles != null;
-                    musicInfo.put("coverFile",coverFiles[coverIndex].getPath());
-                }
-                else{
-                    musicInfo.put("coverFile",null);
+                    musicInfo.put("coverFile", coverFiles[coverIndex].getPath());
+                } else {
+                    musicInfo.put("coverFile", null);
                 }
 
-                int idIndex = searchFilesArrayForIndex(idFiles,getFileName(musicFiles[i]));
-                if(idIndex!=-1){
+                int idIndex = searchFilesArrayForIndex(idFiles, getFileName(musicFiles[i]));
+                if (idIndex != -1) {
                     String id = null;
                     try {
                         BufferedReader in = new BufferedReader(new FileReader(idFiles[idIndex]));
-                        id=in.readLine();
-                    } catch (IOException ignored) { }
-                    musicInfo.put("id",id);
-                    musicInfo.put("idFile",idFiles[idIndex].getPath());
-                }
-                else{
-                    musicInfo.put("id",null);
+                        id = in.readLine();
+                    } catch (IOException ignored) {
+                    }
+                    musicInfo.put("id", id);
+                    musicInfo.put("idFile", idFiles[idIndex].getPath());
+                } else {
+                    musicInfo.put("id", null);
                 }
 
                 data.add(musicInfo);
             }
-            rv_main.setLayoutManager(new LinearLayoutManager(this));
-            rv_main.setAdapter(new LocalMusicAdapter(data,this));
+            localMusicAdapter.addData(data);
             rv_main.setVisibility(View.VISIBLE);
-        }
-        else{
+        } else {
             showNoMusicMessage();
         }
     }
 
-    private int searchFilesArrayForIndex(File[] array,String str){
-        if(array==null){
+    public static String getCacheRootDir(Context context, boolean internal) {
+        String cachePath;
+        if (internal) {
+            cachePath = context.getFilesDir().getPath();
+        } else {
+            try {
+                if (!"mounted".equals(Environment.getExternalStorageState())) {
+                    cachePath = context.getFilesDir().getPath();
+                } else {
+                    File externalFilesDir = context.getExternalFilesDir((String) null);
+                    if (externalFilesDir != null) {
+                        cachePath = externalFilesDir.getPath();
+                    } else {
+                        cachePath = context.getFilesDir().getPath();
+                    }
+                }
+            } catch (Throwable var4) {
+                return context.getFilesDir().getPath();
+            }
+        }
+
+        return cachePath;
+    }
+
+    private int searchFilesArrayForIndex(File[] array, String str) {
+        if (array == null) {
             return -1;
         }
-        for(int i = 0;i<array.length;i++){
-            if(getFileName(array[i]).equals(str)){
+        for (int i = 0; i < array.length; i++) {
+            if (getFileName(array[i]).equals(str)) {
                 return i;
             }
         }
         return -1;
     }
 
-    private String getFileName(File file){
-        return file.getName().substring(0,file.getName().lastIndexOf("."));
+    private String getFileName(File file) {
+        return file.getName().substring(0, file.getName().lastIndexOf("."));
     }
 
-    public void checkPermissionForInit(){
+    public void checkPermissionForInit() {
         // 读取权限
         String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-        if(Build.VERSION.SDK_INT>=23){
+        if (Build.VERSION.SDK_INT >= 23) {
             // 检查权限是否已授权
             int hasPermission = checkSelfPermission(permission);
             // 如果没有授权
@@ -158,10 +184,10 @@ public class LocalMusicActivity extends AppCompatActivity {
                 requestPermissions(new String[]{permission}, 0);
             } else {
                 // 已授权权限
-                initList();
+                loadMusic();
             }
-        } else{
-            initList();
+        } else {
+            loadMusic();
         }
 
     }
@@ -171,14 +197,26 @@ public class LocalMusicActivity extends AppCompatActivity {
         if (grantResults.length > 0) {//grantResults 数组中存放的是授权结果
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // 同意授权
-                initList();
-            }else {
+                loadMusic();
+            } else {
                 // 拒绝授权
                 showPermissionDeniedMessage();
             }
         }
     }
-    public void showPermissionDeniedMessage(){
+
+    private void loadMusic() {
+        File sdDownload = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/download");
+        File sdMusic = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music");
+        File sdMyMusic = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyMusic");
+        File root = new File(getExternalFilesDir(null) + "/download");
+        initList(root);
+        initList(sdDownload);
+        initList(sdMusic);
+        initList(sdMyMusic);
+    }
+
+    public void showPermissionDeniedMessage() {
         RecyclerView rv_main = findViewById(R.id.rv_main);
         rv_main.setVisibility(View.GONE);
 
@@ -188,7 +226,8 @@ public class LocalMusicActivity extends AppCompatActivity {
         mv_message.setImageResource(R.drawable.ic_baseline_sd_storage_24);
         mv_message.setText(R.string.permission_denied);
     }
-    public void showNoMusicMessage(){
+
+    public void showNoMusicMessage() {
         RecyclerView rv_main = findViewById(R.id.rv_main);
         rv_main.setVisibility(View.GONE);
 
@@ -199,7 +238,8 @@ public class LocalMusicActivity extends AppCompatActivity {
         mv_message.setText(R.string.msg_noMusic);
         mv_message.setVisibility(View.VISIBLE);
     }
-    public void showErrorMessage(){
+
+    public void showErrorMessage() {
         RecyclerView rv_main = findViewById(R.id.rv_main);
         rv_main.setVisibility(View.GONE);
 
@@ -209,7 +249,7 @@ public class LocalMusicActivity extends AppCompatActivity {
         mv_message.setVisibility(View.VISIBLE);
         mv_message.setContent(MessageView.LOAD_FAILED, v -> {
             mv_message.setVisibility(View.GONE);
-            initList();
+            loadMusic();
         });
     }
 }

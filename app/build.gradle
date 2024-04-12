@@ -9,7 +9,7 @@ android {
         viewBinding true
     }
     defaultConfig {
-        applicationId "cn.wearbbs.music"
+        applicationId "cn.wlteck.wearmusic"
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 13

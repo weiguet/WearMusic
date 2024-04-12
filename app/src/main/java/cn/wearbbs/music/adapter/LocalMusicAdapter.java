@@ -40,6 +40,11 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
         this.activity = activity;
     }
 
+    public void addData(JSONArray nData) {
+        this.data.addAll(nData);
+        notifyDataSetChanged();
+    }
+
     @NotNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -51,23 +56,22 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
     public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
         JSONObject currentMusicInfo = data.getJSONObject(position);
         viewHolder.iv_cover.setImageResource(R.drawable.ic_baseline_photo_size_select_actual_24);
-        if(currentMusicInfo.getString("coverFile")!=null){
+        if (currentMusicInfo.getString("coverFile") != null) {
             RequestOptions options = RequestOptions.bitmapTransform(new RoundedCorners(10)).placeholder(R.drawable.ic_baseline_photo_size_select_actual_24).error(R.drawable.ic_baseline_photo_size_select_actual_24);
             Glide.with(activity).load(currentMusicInfo.getString("coverFile")).apply(options).into(viewHolder.iv_cover);
         }
         String name = getFileName(new File(currentMusicInfo.getString("musicFile")));
 
-        if(name.contains("--")){
-            viewHolder.tv_title.setText(name.substring(0,name.indexOf("-")));
-            viewHolder.tv_artists.setText(name.substring(name.lastIndexOf("-")+1));
-        }
-        else{
+        if (name.contains("--")) {
+            viewHolder.tv_title.setText(name.substring(0, name.indexOf("-")));
+            viewHolder.tv_artists.setText(name.substring(name.lastIndexOf("-") + 1));
+        } else {
             viewHolder.tv_title.setText(name);
             viewHolder.tv_artists.setText(activity.getString(R.string.unknown));
         }
 
-        data.getJSONObject(position).put("name",viewHolder.tv_title.getText());
-        data.getJSONObject(position).put("artists",viewHolder.tv_artists.getText());
+        data.getJSONObject(position).put("name", viewHolder.tv_title.getText());
+        data.getJSONObject(position).put("artists", viewHolder.tv_artists.getText());
 
         viewHolder.ll_main.setOnClickListener(v -> {
             Intent intent = new Intent(activity, MainActivity.class);
@@ -75,15 +79,15 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             intent.putExtra("data", data.toJSONString());
             intent.putExtra("musicIndex", position);
-            intent.putExtra("local",true);
+            intent.putExtra("local", true);
             activity.startActivity(intent);
             activity.finish();
         });
 
         viewHolder.ll_main.setOnLongClickListener(v -> {
             String title = name;
-            if(name.contains("--")){
-                title = name.substring(0,name.indexOf("-"));
+            if (name.contains("--")) {
+                title = name.substring(0, name.indexOf("-"));
             }
 
             new AlertDialog.Builder(activity)
@@ -95,25 +99,24 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
                         File coverFile = new File(currentMusicInfo.getString("coverFile"));
                         File idFile = new File(currentMusicInfo.getString("coverFile"));
                         boolean flag = true;
-                        if(musicFile.exists()){
+                        if (musicFile.exists()) {
                             flag = musicFile.delete();
                         }
-                        if(lrcFile.exists()){
+                        if (lrcFile.exists()) {
                             flag &= lrcFile.delete();
                         }
-                        if(coverFile.exists()){
+                        if (coverFile.exists()) {
                             flag &= coverFile.delete();
                         }
-                        if(idFile.exists()){
+                        if (idFile.exists()) {
                             flag &= idFile.delete();
                         }
-                        if(flag){
-                            ToastUtil.show(activity,"删除成功");
+                        if (flag) {
+                            ToastUtil.show(activity, "删除成功");
                             activity.startActivity(new Intent(activity, LocalMusicActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                             activity.finish();
-                        }
-                        else{
-                            ToastUtil.show(activity,"删除失败");
+                        } else {
+                            ToastUtil.show(activity, "删除失败");
                         }
                     })
                     .setNegativeButton("手滑了", (dialogInterface, i) -> dialogInterface.dismiss())
@@ -122,8 +125,8 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
         });
     }
 
-    private String getFileName(File file){
-        return file.getName().substring(0,file.getName().lastIndexOf("."));
+    private String getFileName(File file) {
+        return file.getName().substring(0, file.getName().lastIndexOf("."));
     }
 
     @Override
