@@ -95,7 +95,7 @@ public class MenuActivity extends SlideBackActivity {
                 startActivity(new Intent(MenuActivity.this, MusicLibraryActivity.class));
                 break;
             case R.id.item_localmusic:
-                startActivity(new Intent(MenuActivity.this, LocalMusicActivity.class));
+                startActivity(new Intent(MenuActivity.this, LocalMusicNewActivity.class));
                 break;
         }
     }

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="?attr/colorOnPrimary"
     android:orientation="vertical"
-    tools:context=".ui.LocalMusicActivity">
+    tools:context=".ui.LocalMusicNewActivity">
 
     <RelativeLayout
         android:id="@+id/main_title"

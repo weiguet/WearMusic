@@ -23,12 +23,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
-import cn.jackuxl.api.UserApi;
 import cn.wearbbs.music.R;
-import cn.wearbbs.music.application.MainApplication;
-import cn.wearbbs.music.ui.LocalMusicActivity;
+import cn.wearbbs.music.ui.LocalMusicNewActivity;
 import cn.wearbbs.music.ui.MainActivity;
-import cn.wearbbs.music.util.SharedPreferencesUtil;
 import cn.wearbbs.music.util.ToastUtil;
 
 public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.ViewHolder> {
@@ -113,7 +110,7 @@ public class LocalMusicAdapter extends RecyclerView.Adapter<LocalMusicAdapter.Vi
                         }
                         if (flag) {
                             ToastUtil.show(activity, "删除成功");
-                            activity.startActivity(new Intent(activity, LocalMusicActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                            activity.startActivity(new Intent(activity, LocalMusicNewActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                             activity.finish();
                         } else {
                             ToastUtil.show(activity, "删除失败");
